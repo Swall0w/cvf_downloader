@@ -1,12 +1,17 @@
-# -*- coding: utf-8 -*-
 import os
 import requests
 from tqdm import tqdm
+import argparse
 
-#conf = 'CVPR2016' # CVPR2015/CVPR2014/CVPR2013/ICCV2013
-conf = 'WACV2020' # CVPR2015/CVPR2014/CVPR2013/ICCV2013
-#header = 'http://www.cv-foundation.org/openaccess/'
-header = 'http://openaccess.thecvf.com/'
+
+def arg():
+    parser = argparse.ArgumentParser(description="PDF Downloader for CVF")
+    parser.add_argument('--conf', '-c',
+        type=str,
+        default='WACV2020',
+        help='The target conference name.')
+    return parser.parse_args()
+
 
 def name_check(name):
     name = name.replace('?','')
@@ -15,16 +20,22 @@ def name_check(name):
     name = name.replace('/',' or ')
     return name
 
+
 def main():
-    if not os.path.exists(conf):
-        os.mkdir(conf)
-    r = requests.get(header+conf+'.py')
+    args = arg()
+    header = 'http://openaccess.thecvf.com/'
+
+    if not os.path.exists(args.conf):
+        os.mkdir(args.conf)
+
+    r = requests.get(header+args.conf+'.py')
     txt = r.text;
     lines = txt.split('\n')
+
     cnt = 0
     for line in tqdm(lines):
         if line.find('<dt class="ptitle">')>-1:
-            pdfname = conf+'/'+name_check(line.split('>')[3].split('<')[0])+'.pdf'
+            pdfname = args.conf+'/'+name_check(line.split('>')[3].split('<')[0])+'.pdf'
             cnt+=1
         if len(line)>0:
             if line[0]=='[':
@@ -36,8 +47,9 @@ def main():
                     f.write(r.content)
                     f.close()
 
+
 if __name__ == '__main__':
     main()
-    cmd = 'find ./' + str(conf) + ' -name "* *" | rename "s/ /_/g"'
+    cmd = 'find ./' + str(args.conf) + ' -name "* *" | rename "s/ /_/g"'
     print(cmd)
     os.system(cmd)
